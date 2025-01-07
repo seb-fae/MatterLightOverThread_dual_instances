@@ -1,0 +1,15 @@
+---
+label: "MatterLightOverThreadSolution_2"
+quality: "production"
+description: "Matter solution containing both a Matter bootloader and Lighting over\
+  \ Thread Example"
+project:
+- id: "application"
+  path: "MatterLightOverThread_dual_instances.slcp"
+  output: "."
+- id: "bootloader"
+  path: "..\\Matter-Bootloader_2\\Matter-Bootloader_2.slcp"
+  output: "../Matter-Bootloader_2"
+post_build:
+  profile: ""
+  path: "MatterLightOverThreadSolution_2.slpb"

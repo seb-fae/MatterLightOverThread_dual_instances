@@ -1,0 +1,123 @@
+# Silicon Labs Project Configuration Tools: slcp, v0, Component selection file.
+project_name: MatterLightOverThread_dual_instances
+label: MatterLightOverThread_dual_instances
+description: |
+  Matter Lighting App
+package: Matter
+quality: production
+readme:
+- {path: README.md}
+- {path: README.md}
+source:
+- {path: src/AppTask.cpp}
+- {path: src/LightingManager.cpp}
+- {path: src/main.cpp}
+- {path: src/ZclCallbacks.cpp}
+include:
+- path: include
+  file_list:
+  - {path: AppConfig.h}
+  - {path: AppEvent.h}
+  - {path: AppTask.h}
+  - {path: CHIPProjectConfig.h}
+  - {path: LightingManager.h}
+sdk: {id: simplicity_sdk, version: 2024.12.0}
+toolchain_settings:
+- {value: gnu++17, option: cxx_standard}
+component:
+- {from: matter, id: app_common}
+- {from: matter, id: matter}
+- {from: matter, id: matter_access_control}
+- {from: matter, id: matter_administrator_commissioning}
+- {from: matter, id: matter_basic_information}
+- {from: matter, id: matter_ble}
+- {from: matter, id: matter_buttons}
+- {from: matter, id: matter_color_control}
+- {from: matter, id: matter_configuration_over_swo}
+- {from: matter, id: matter_crypto}
+- {from: matter, id: matter_default_lcd_config}
+- {from: matter, id: matter_descriptor}
+- {from: matter, id: matter_diagnostic_logs}
+- {from: matter, id: matter_fixed_label}
+- {from: matter, id: matter_gatt}
+- {from: matter, id: matter_general_commissioning}
+- {from: matter, id: matter_general_diagnostics}
+- {from: matter, id: matter_group_key_mgmt}
+- {from: matter, id: matter_groups}
+- {from: matter, id: matter_identify}
+- {from: matter, id: matter_leds}
+- {from: matter, id: matter_level_control}
+- {from: matter, id: matter_lighting}
+- {from: matter, id: matter_localization_configuration}
+- {from: matter, id: matter_log_uart}
+- {from: matter, id: matter_network_commissioning}
+- {from: matter, id: matter_on_off}
+- {from: matter, id: matter_operational_credentials}
+- {from: matter, id: matter_ota_requestor}
+- {from: matter, id: matter_ota_support}
+- {from: matter, id: matter_platform_mg}
+- {from: matter, id: matter_power_source}
+- {from: matter, id: matter_provision_default}
+- {from: matter, id: matter_scenes}
+- {from: matter, id: matter_segger_rtt}
+- {from: matter, id: matter_shell}
+- {from: matter, id: matter_software_diagnostics}
+- {from: matter, id: matter_thread}
+- {from: matter, id: matter_thread_network_diagnostics}
+- {from: matter, id: matter_time_format_localization}
+- {from: matter, id: matter_user_label}
+- {id: EFR32MG24B210F1536IM48}
+- {id: brd4002a}
+- {id: brd4186c}
+- {id: clock_manager}
+- {id: device_init}
+- {id: ot_stack_ftd}
+- {id: rail_util_pti}
+- {id: sl_system}
+other_file:
+- {path: qr_code_img.png}
+define:
+- {name: CHIP_CRYPTO_PLATFORM, value: '1'}
+- {name: _WANT_REENT_SMALL, value: '1'}
+- {name: IS_DEMO_LIGHT, value: '1'}
+- {name: NVM3_DEFAULT_NVM_SIZE, value: '40960'}
+- {name: NVM3_DEFAULT_MAX_OBJECT_SIZE, value: '4092'}
+config_file:
+- {path: config/common/lighting-thread-app.zap, directory: common}
+- {path: config/provision/provision.mattpconf, directory: provision}
+template_contribution:
+- {name: memory_flash_start, priority: 0, value: 134242304}
+- {name: memory_flash_size, priority: 0, value: 1540096}
+requires:
+- {name: matter_drivers_series_2}
+configuration:
+- condition: [brd1019a]
+  name: SL_RAIL_UTIL_PTI_MODE
+  value: RAIL_PTI_MODE_DISABLED
+- {name: SL_OPENTHREAD_ENABLE_APP_TASK, value: '0'}
+- {name: SL_OPENTHREAD_ENABLE_CLI_TASK, value: '0'}
+- {name: OPENTHREAD_CONFIG_LOG_OUTPUT, value: OPENTHREAD_CONFIG_LOG_OUTPUT_APP}
+- condition: [matter_thread_cert_libs]
+  name: SL_MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+  value: '1'
+- {name: SL_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED, value: '1'}
+- condition: [matter_thread_coap_cert_libs]
+  name: OPENTHREAD_CONFIG_COAP_API_ENABLE
+  value: '1'
+- condition: [matter_thread_coap_cert_libs]
+  name: OPENTHREAD_CONFIG_COAP_OBSERVE_API_ENABLE
+  value: '1'
+- condition: [matter_thread_coap_cert_libs]
+  name: OPENTHREAD_CONFIG_COAP_SECURE_API_ENABLE
+  value: '1'
+- {name: SL_STACK_SIZE, value: '4608'}
+- {name: SL_BT_RTOS_EVENT_HANDLER_STACK_SIZE, value: '1536'}
+- {name: CIRCULAR_QUEUE_LEN_MAX, value: '16'}
+ui_hints:
+  highlight:
+  - {path: README.md}
+sdk_extension:
+- {id: matter, version: 2.5.0}
+post_build:
+- {path: MatterLightOverThread_dual_instances.slpb, profile: application}
+

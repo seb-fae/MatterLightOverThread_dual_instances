@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="uc.module.setup.apack_zclConfigurator.com.silabs.ss.framework.project.toolchain.core.default#com.silabs.ss.tool.ide.arm.toolchain.gnu.cdt:12.2.1.20221205.gcc" propertyScope="project">
+  <folder name="autogen">
+    <folder name="zap-generated">
+      <folder name="app-common">
+        <folder name="zap-generated">
+          <folder name="attributes">
+            <file name="Accessors.h" builtin="true" generated="true"/>
+          </folder>
+          <folder name="ids">
+            <file name="Attributes.h" builtin="true" generated="true"/>
+            <file name="Clusters.h" builtin="true" generated="true"/>
+            <file name="Commands.h" builtin="true" generated="true"/>
+            <file name="Events.h" builtin="true" generated="true"/>
+          </folder>
+          <file name="attribute-type.h" builtin="true" generated="true"/>
+          <file name="callback.h" builtin="true" generated="true"/>
+          <file name="cluster-enums-check.h" builtin="true" generated="true"/>
+          <file name="cluster-enums.h" builtin="true" generated="true"/>
+          <file name="cluster-objects.h" builtin="true" generated="true"/>
+        </folder>
+      </folder>
+      <folder name="app">
+        <file name="callback-stub.cpp" builtin="true" generated="true"/>
+        <file name="cluster-init-callback.cpp" builtin="true" generated="true"/>
+        <file name="PluginApplicationCallbacks.h" builtin="true" generated="true"/>
+      </folder>
+      <folder name="attributes">
+        <file name="Accessors.cpp" builtin="true" generated="true"/>
+      </folder>
+      <file name="access.h" builtin="true" generated="true"/>
+      <file name="cluster-objects.cpp" builtin="true" generated="true"/>
+      <file name="endpoint_config.h" builtin="true" generated="true"/>
+      <file name="gen_config.h" builtin="true" generated="true"/>
+      <file name="IMClusterCommandHandler.cpp" builtin="true" generated="true"/>
+    </folder>
+  </folder>
+  <includePath uri="studio:/project/autogen/zap-generated"/>
+  <includePath uri="studio:/project/autogen/zap-generated/app-common/zap-generated"/>
+  <includePath uri="studio:/project/autogen/zap-generated/app-common/zap-generated/attributes"/>
+  <includePath uri="studio:/project/autogen/zap-generated/app-common/zap-generated/ids"/>
+  <includePath uri="studio:/project/autogen/zap-generated/app"/>
+  <includePath uri="studio:/project/autogen/zap-generated/attributes"/>
+</project>
