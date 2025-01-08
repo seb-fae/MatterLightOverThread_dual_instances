@@ -119,10 +119,12 @@ void otPlatFlashRead(otInstance *aInstance, uint8_t aSwapIndex, uint32_t aOffset
     OPENTHREAD_CONFIG_MLE_MAX_CHILDREN // Indexed key types are only supported for kKeyChildInfo (=='child table').
 #define ENUM_NVM3_KEY_LIST_SIZE 4      // List size used when enumerating nvm3 keys.
 
-static otError          addSetting(uint16_t aKey, const uint8_t *aValue, uint16_t aValueLength);
-static nvm3_ObjectKey_t makeNvm3ObjKey(uint16_t otSettingsKey, int index);
+static otError          addSetting(otInstance *aInstance, uint16_t aKey, const uint8_t *aValue, uint16_t aValueLength);
+static nvm3_ObjectKey_t makeNvm3ObjKey(uint16_t otSettingsKey, int index, uint8_t iid);
 static otError          mapNvm3Error(Ecode_t nvm3Res);
 static bool             nvmOpenedByOT;
+
+extern uint8_t otPlatMultipanInstanceToIid(otInstance *aInstance);
 
 void otPlatSettingsInit(otInstance *aInstance, const uint16_t *aSensitiveKeys, uint16_t aSensitiveKeysLength)
 {
@@ -181,9 +183,11 @@ otError otPlatSettingsGet(otInstance *aInstance, uint16_t aKey, int aIndex, uint
     otError  err;
     uint16_t valueLength = 0;
 
+    uint8_t iid = otPlatMultipanInstanceToIid(aInstance) - 1;
+
     otEXPECT_ACTION(sl_ot_rtos_task_can_access_pal(), err = OT_ERROR_REJECTED);
 
-    nvm3_ObjectKey_t nvm3Key  = makeNvm3ObjKey(aKey, 0); // The base nvm3 key value.
+    nvm3_ObjectKey_t nvm3Key  = makeNvm3ObjKey(aKey, 0, iid); // The base nvm3 key value.
     bool             idxFound = false;
     int              idx      = 0;
     err                       = OT_ERROR_NOT_FOUND;
@@ -195,7 +199,7 @@ otError otPlatSettingsGet(otInstance *aInstance, uint16_t aKey, int aIndex, uint
                                          keys,
                                          ENUM_NVM3_KEY_LIST_SIZE,
                                          nvm3Key,
-                                         makeNvm3ObjKey(aKey, NUM_INDEXED_SETTINGS));
+                                         makeNvm3ObjKey(aKey, NUM_INDEXED_SETTINGS, iid));
         for (size_t i = 0; i < objCnt; ++i)
         {
             nvm3Key = keys[i];
@@ -262,7 +266,7 @@ otError otPlatSettingsSet(otInstance *aInstance, uint16_t aKey, const uint8_t *a
     if ((err == OT_ERROR_NONE) || (err == OT_ERROR_NOT_FOUND))
     {
         // Add new setting object (i.e. 'index0' of the key).
-        err = addSetting(aKey, aValue, aValueLength);
+        err = addSetting(aInstance, aKey, aValue, aValueLength);
         SuccessOrExit(err);
     }
 
@@ -277,7 +281,7 @@ otError otPlatSettingsAdd(otInstance *aInstance, uint16_t aKey, const uint8_t *a
 
     otEXPECT_ACTION(sl_ot_rtos_task_can_access_pal(), error = OT_ERROR_REJECTED);
 
-    error = addSetting(aKey, aValue, aValueLength);
+    error = addSetting(aInstance, aKey, aValue, aValueLength);
 
 exit:
     return error;
@@ -290,10 +294,10 @@ otError otPlatSettingsDelete(otInstance *aInstance, uint16_t aKey, int aIndex)
     // (Repeatedly enumerates a list of matching keys from the nvm3 until the
     // required index is found).
 
-    OT_UNUSED_VARIABLE(aInstance);
+    uint8_t iid = otPlatMultipanInstanceToIid(aInstance) - 1;
 
     otError          err;
-    nvm3_ObjectKey_t nvm3Key  = makeNvm3ObjKey(aKey, 0); // The base nvm3 key value.
+    nvm3_ObjectKey_t nvm3Key  = makeNvm3ObjKey(aKey, 0, iid); // The base nvm3 key value.
     bool             idxFound = false;
     int              idx      = 0;
     err                       = OT_ERROR_NOT_FOUND;
@@ -308,7 +312,7 @@ otError otPlatSettingsDelete(otInstance *aInstance, uint16_t aKey, int aIndex)
                                          keys,
                                          ENUM_NVM3_KEY_LIST_SIZE,
                                          nvm3Key,
-                                         makeNvm3ObjKey(aKey, NUM_INDEXED_SETTINGS));
+                                         makeNvm3ObjKey(aKey, NUM_INDEXED_SETTINGS, iid));
         for (size_t i = 0; i < objCnt; ++i)
         {
             nvm3Key = keys[i];
@@ -352,7 +356,7 @@ void otPlatSettingsWipe(otInstance *aInstance)
     // Note- any OT User nvm3 objects in the OT nvm3 area are NOT be erased.
     for (uint16_t aKey = 0; aKey < 8; ++aKey)
     {
-        otPlatSettingsDelete(NULL, aKey, -1);
+        otPlatSettingsDelete(aInstance, aKey, -1);
     }
 
 exit:
@@ -361,12 +365,13 @@ exit:
 
 // Local functions..
 
-static otError addSetting(uint16_t aKey, const uint8_t *aValue, uint16_t aValueLength)
+static otError addSetting(otInstance *aInstance, uint16_t aKey, const uint8_t *aValue, uint16_t aValueLength)
 {
     // Helper function- writes input buffer data to a NEW nvm3 object.
     // nvm3 object is created at the first available Key + index.
 
     otError err;
+    uint8_t iid = otPlatMultipanInstanceToIid(aInstance) - 1;
 
     if ((aValueLength == 0) || (aValue == NULL))
     {
@@ -377,7 +382,7 @@ static otError addSetting(uint16_t aKey, const uint8_t *aValue, uint16_t aValueL
         for (int idx = 0; idx <= NUM_INDEXED_SETTINGS; ++idx)
         {
             nvm3_ObjectKey_t nvm3Key;
-            nvm3Key = makeNvm3ObjKey(aKey, idx);
+            nvm3Key = makeNvm3ObjKey(aKey, idx, iid);
 
             uint32_t objType;
             size_t   objLen;
@@ -398,9 +403,9 @@ static otError addSetting(uint16_t aKey, const uint8_t *aValue, uint16_t aValueL
     return err;
 }
 
-static nvm3_ObjectKey_t makeNvm3ObjKey(uint16_t otSettingsKey, int index)
+static nvm3_ObjectKey_t makeNvm3ObjKey(uint16_t otSettingsKey, int index, uint8_t iid)
 {
-    return (NVM3KEY_DOMAIN_OPENTHREAD | (otSettingsKey << 8) | (index & 0xFF));
+    return (NVM3KEY_DOMAIN_OPENTHREAD | (otSettingsKey << 8) | ((index & 0xFF) + iid * (OT_SETTINGS_KEY_BORDER_AGENT_ID + 1)));
 }
 
 static otError mapNvm3Error(Ecode_t nvm3Res)

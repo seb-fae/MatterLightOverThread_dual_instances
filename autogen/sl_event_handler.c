@@ -7,6 +7,7 @@
 #include "sl_device_init_dcdc.h"
 #include "sl_clock_manager.h"
 #include "sl_hfxo_manager.h"
+#include "sl_rail_util_dma.h"
 #include "pa_conversions_efr32.h"
 #include "sl_rail_util_power_manager_init.h"
 #include "sl_rail_util_pti.h"
@@ -82,6 +83,7 @@ void sl_service_init(void)
 
 void sl_stack_init(void)
 {
+  sl_rail_util_dma_init();
   sl_rail_util_pa_init();
   sl_rail_util_power_manager_init();
   sl_rail_util_pti_init();

@@ -124,6 +124,7 @@ static const osMutexAttr_t sli_stack_mutex_attributes = {
 };
 
 otInstance *otGetInstance(void);
+otInstance *otGetMyInstance(void);
 
 // Create the main task mutex. This mutex will be used to grant access to stack.
 static void sl_ot_rtos_create_stack_mutex(void)
@@ -244,6 +245,8 @@ static void sli_ot_stack_task(void *context)
 
     // Get the OT instance for stack operation
     otInstance *instance = otGetInstance();
+    otInstance *myinstance = otGetMyInstance();
+
 
     while (!otSysPseudoResetWasRequested())
     {
@@ -255,10 +258,14 @@ static void sli_ot_stack_task(void *context)
         otSysProcessDrivers(instance);
         otTaskletsProcess(instance);
 
+        // Process callbacks and tasklets
+        otSysProcessDrivers(myinstance);
+        otTaskletsProcess(myinstance);
+
         // Release the stack mutex
         sl_ot_rtos_release_stack_mutex();
 
-        if (!otTaskletsArePending(instance))
+        if ((!otTaskletsArePending(instance))&& (!otTaskletsArePending(myinstance)))
         {
             sli_ot_stack_task_info.active_duration += otPlatTimeGet() - timestamp;
             // If tasklets are not pending, wait for stack event..

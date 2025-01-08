@@ -162,7 +162,7 @@
 
 // <e>  COAP API
 #ifndef OPENTHREAD_CONFIG_COAP_API_ENABLE
-#define OPENTHREAD_CONFIG_COAP_API_ENABLE           0
+#define OPENTHREAD_CONFIG_COAP_API_ENABLE           1
 #endif
 // </e>
 // <e>  COAP Observe (RFC7641) API
@@ -237,17 +237,17 @@
 // </e>
 // <e>  MultiPAN RCP
 #ifndef OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
-#define OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE       0
+#define OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE       1
 #endif
 // </e>
 // <e>  Multiple OpenThread Instances
 #ifndef OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE
-#define OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE      0
+#define OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE      1
 #endif
 // </e>
 // <e>  Multiple Static Instance Support
 #ifndef OPENTHREAD_CONFIG_MULTIPLE_STATIC_INSTANCE_ENABLE
-#define OPENTHREAD_CONFIG_MULTIPLE_STATIC_INSTANCE_ENABLE      0
+#define OPENTHREAD_CONFIG_MULTIPLE_STATIC_INSTANCE_ENABLE      1
 #endif
 // </e>
 // <e>  Number of OpenThread Instances For Static Buffer Allocation
@@ -357,7 +357,7 @@
 #endif
 
 // <e>  Enable Logging
-#define OPENTHREAD_FULL_LOGS_ENABLE                 0
+#define OPENTHREAD_FULL_LOGS_ENABLE                 1
 #if     OPENTHREAD_FULL_LOGS_ENABLE
 
 // <h>  Note: Enabling higher log levels, which include logging packet details, can cause delays which may result in join failures.

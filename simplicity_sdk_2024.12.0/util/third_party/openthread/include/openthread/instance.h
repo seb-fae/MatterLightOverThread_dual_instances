@@ -87,6 +87,18 @@ typedef struct otInstance otInstance;
 otInstance *otInstanceInit(void *aInstanceBuffer, size_t *aInstanceBufferSize);
 
 /**
+ * Returns the index of the OpenThread instance.
+ *
+ * @param[in] aInstance The reference of the OpenThread instance to get index.
+ *
+ * @returns The index of the OpenThread instance.
+ *
+ */
+
+uint8_t otInstanceGetIdx(otInstance *aInstance);
+
+
+/**
  * Initializes the static single instance of the OpenThread library.
  *
  * Initializes OpenThread and prepares it for subsequent OpenThread API calls. This function must be

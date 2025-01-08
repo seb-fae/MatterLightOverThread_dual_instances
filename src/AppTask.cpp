@@ -114,9 +114,14 @@ CHIP_ERROR AppTask::Init()
     return err;
 }
 
+extern CHIP_ERROR StartCoapTask();
+
 CHIP_ERROR AppTask::StartAppTask()
 {
-    return BaseApplication::StartAppTask(AppTaskMain);
+  CHIP_ERROR error = BaseApplication::StartAppTask(AppTaskMain);
+  if (error != CHIP_NO_ERROR)
+    return error;
+  return StartCoapTask();
 }
 
 void AppTask::AppTaskMain(void * pvParameter)
