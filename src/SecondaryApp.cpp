@@ -36,7 +36,7 @@
 
 
 #ifndef APP_TASK_STACK_SIZE
-#define APP_TASK_STACK_SIZE (8192)
+#define APP_TASK_STACK_SIZE (4096)
 #endif
 #define APP_TASK_PRIORITY 8
 
@@ -74,8 +74,10 @@ void coap_request_handler(void *aContext, otMessage *aMessage, const otMessageIn
 
   strcpy((char*)gpioState, LightMgr().IsLightOn() ? "ON": "OFF");
 
-  if(OT_COAP_CODE_GET == messageCode)
+  switch (messageCode)
   {
+    case OT_COAP_CODE_GET:
+
       error = otMessageAppend(responseMessage, gpioState,
                               strlen((const char*)gpioState));
       otEXPECT(OT_ERROR_NONE == error);
@@ -83,43 +85,35 @@ void coap_request_handler(void *aContext, otMessage *aMessage, const otMessageIn
       error = otCoapSendResponse((otInstance*)aContext, responseMessage,
                                  aMessageInfo);
       otEXPECT(OT_ERROR_NONE == error);
-  }
-  else if ((OT_COAP_CODE_POST == messageCode) || (OT_COAP_CODE_PUT == messageCode))
+      break;
 
-  {
+    case OT_COAP_CODE_POST:
+    case OT_COAP_CODE_PUT:
+    {
       char data[32];
       uint16_t offset = otMessageGetOffset(aMessage);
       uint16_t read = otMessageRead(aMessage, offset, data, sizeof(data) - 1);
       data[read] = '\0';
+
+      LightingManager::Action_t action = LightingManager::ON_ACTION;
 
       bool ret = false;
 
       /* process message */
       if(strcmp("ON", data) == 0)
       {
-        ret = LightMgr().InitiateAction(AppEvent::kEventType_Light, LightingManager::ON_ACTION);
-
+        action = LightingManager::ON_ACTION;
         otLogCritPlat("GPIO ON\n");
       }
       else if(strcmp("OFF", data) == 0)
       {
-        ret = LightMgr().InitiateAction(AppEvent::kEventType_Light, LightingManager::OFF_ACTION);
-
+        action = LightingManager::OFF_ACTION;
         otLogCritPlat("GPIO OFF\n");
       }
       else if (strcmp("TOGGLE", data) == 0)
       {
-        if (LightMgr().IsLightOn())
-          {
-            strcpy((char*)data, "OFF");
-            ret = LightMgr().InitiateAction(AppEvent::kEventType_Light, LightingManager::OFF_ACTION);
-          }
-        else
-          {
-            strcpy((char*)data, "ON");
-            ret = LightMgr().InitiateAction(AppEvent::kEventType_Light, LightingManager::ON_ACTION);
-          }
-
+        strcpy((char*)data, LightMgr().IsLightOn() ? "OFF": "ON");
+        action = LightMgr().IsLightOn() ? LightingManager::OFF_ACTION : LightingManager::ON_ACTION;
         otLogCritPlat("GPIO TOGGLE\n");
       }
       else
@@ -127,6 +121,8 @@ void coap_request_handler(void *aContext, otMessage *aMessage, const otMessageIn
         /* no valid body, fail without response */
         otEXPECT_ACTION(false, error = OT_ERROR_NO_BUFS);
       }
+      /* We use kEventType_Button to update cluster after action */
+      ret = LightMgr().InitiateAction(AppEvent::kEventType_Button, action);
 
       if (OT_COAP_TYPE_CONFIRMABLE == messageType)
       {
@@ -143,6 +139,10 @@ void coap_request_handler(void *aContext, otMessage *aMessage, const otMessageIn
                                    responseMessage, aMessageInfo);
         otEXPECT(OT_ERROR_NONE == error);
       }
+    }
+      break;
+    default:
+      break;
   }
 
   exit:
@@ -168,7 +168,6 @@ otError coap_server_init(otInstance *aInstance)
 
     // Register the CoAP resource
     otCoapAddResource(aInstance, &coapResourcegpio);
-
 
     responseMessage = otCoapNewMessage(aInstance, NULL);
     if (responseMessage == NULL)
