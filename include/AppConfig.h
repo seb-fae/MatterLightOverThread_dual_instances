@@ -29,7 +29,7 @@
 
 // Time it takes in ms for the simulated actuator to move from one
 // state to another.
-#define ACTUATOR_MOVEMENT_PERIOS_MS 10
+#define ACTUATOR_MOVEMENT_PERIOS_MS 100
 
 #define ON_DEMO_BITMAP                                                                                                             \
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f, 0xfc,  \

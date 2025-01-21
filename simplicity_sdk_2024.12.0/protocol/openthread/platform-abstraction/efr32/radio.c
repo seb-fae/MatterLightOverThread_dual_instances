@@ -31,7 +31,7 @@
  *   This file implements the OpenThread platform abstraction for radio communication.
  *
  */
-
+//#define DEBUG_RADIO
 #include <assert.h>
 #include <openthread-core-config.h>
 #include <openthread-system.h>
@@ -45,6 +45,7 @@
 #include <openthread/platform/multipan.h>
 #endif
 
+//#define DEBUG_RADIO
 #include "common/code_utils.hpp"
 #include "common/debug.hpp"
 #include "common/logging.hpp"
@@ -1494,7 +1495,7 @@ void otPlatRadioSetPanId(otInstance *aInstance, uint16_t aPanId)
 
     otEXPECT(sl_ot_rtos_task_can_access_pal());
     OT_ASSERT(panIndex != INVALID_INTERFACE_INDEX);
-    otLogInfoPlat("PANID=%X index=%u IID=%d", aPanId, panIndex, iid);
+    otLogWarnPlat("PANID=%X index=%u IID=%d", aPanId, panIndex, iid);
     utilsSoftSrcMatchSetPanId(iid, aPanId);
 
     status = RAIL_IEEE802154_SetPanId(gRailHandle, aPanId, panIndex);
@@ -1669,7 +1670,7 @@ otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
     otEXPECT_ACTION(sl_ot_rtos_task_can_access_pal(), error = OT_ERROR_REJECTED);
     otEXPECT_ACTION(!getInternalFlag(FLAG_ONGOING_TX_DATA) && sEnergyScanStatus != ENERGY_SCAN_STATUS_IN_PROGRESS,
                     error = OT_ERROR_INVALID_STATE);
-
+    OT_ASSERT(!getInternalFlag(FLAG_ONGOING_TX_DATA) && sEnergyScanStatus != ENERGY_SCAN_STATUS_IN_PROGRESS);
     OT_UNUSED_VARIABLE(iid);
 #if FAST_CHANNEL_SWITCHING_SUPPORT && OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
     uint8_t index = efr32GetPanIndexFromIid(iid);
@@ -1764,16 +1765,18 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
       otPlatRadioTxStarted(aInstance, aFrame);
       tx_aborted[iid - 1] = true;
 #ifdef DEBUG_RADIO
-      otLogInfoPlat("RADIOTX ABORT\n", iid);
+      otLogWarnPlat("RADIOTX ABORT\n", iid);
 #endif
-      goto exit;
     }
-
     tx_busy = true;
 
     CORE_EXIT_ATOMIC();
+
+    if (tx_aborted[iid - 1])
+      goto exit;
+
 #ifdef DEBUG_RADIO
-    otLogInfoPlat("RADIOTX %d", iid);
+    otLogWarnPlat("RADIOTX %d", iid);
 #endif
     // sTransmitBuffer's index 0 corresponds to host 1 i.e. iid 1 and reason is,
     // iid zero is reserved for broadcast frames in multipan case.
@@ -3407,7 +3410,9 @@ static void processNextRxPacket(otInstance *aInstance)
     {
 #if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
         instance = otPlatMultipanIidToInstance(interfaceId);
-        otLogInfoPlat("RX iid %d, 0x%x", interfaceId, instance);
+#ifdef DEBUG_RADIO
+        otLogWarnPlat("RX iid %d, 0x%x", interfaceId, instance);
+#endif
 #else
         instance = aInstance;
 #endif
@@ -3471,18 +3476,16 @@ static void processTxComplete(otInstance *aInstance)
   CORE_ENTER_ATOMIC();
 
   /* Check first if a TX has bee aborted because Radio was already transmitting */
-  if(tx_aborted[iid] == true)
+  if(tx_aborted[iid] && !getInternalFlag(FLAG_ONGOING_TX_DATA))
   {
     tx_aborted[iid] = false;
 #ifdef DEBUG_RADIO
-    otLogInfoPlat("RADIOTX DONE ABORT %d 11", iid);
+    otLogWarnPlat("RADIOTX DONE ABORT %d 11", iid);
 #endif
     otPlatRadioTxDone(otPlatMultipanIidToInstance(iid + 1),
                       &sTransmitBuffer[iid].frame,
                       ackFrame,
                       OT_ERROR_ABORT);
-    otSysEventSignalPending();
-    return;
   }
 
   CORE_EXIT_ATOMIC();
@@ -3541,7 +3544,7 @@ static void processTxComplete(otInstance *aInstance)
             sCurrentTxPacket->frame.mInfo.mTxInfo.mTxDelay         = 0;
 #if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
 #ifdef DEBUG_RADIO
-            otLogInfoPlat("RADIOTX DONE %d %d", sCurrentTxPacket->iid, txStatus);
+            otLogWarnPlat("RADIOTX DONE %d %d", sCurrentTxPacket->iid, txStatus);
 #endif
 
             CORE_DECLARE_IRQ_STATE;

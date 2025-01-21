@@ -160,19 +160,24 @@ void AppTask::LightActionEventHandler(AppEvent * aEvent)
     int32_t actor;
     CHIP_ERROR err = CHIP_NO_ERROR;
 
-    if (aEvent->Type == AppEvent::kEventType_Light)
+    switch (aEvent->Type)
     {
+      case AppEvent::kEventType_Light:
         action = static_cast<LightingManager::Action_t>(aEvent->LightEvent.Action);
         actor  = aEvent->LightEvent.Actor;
-    }
-    else if (aEvent->Type == AppEvent::kEventType_Button)
-    {
+        break;
+      case AppEvent::kEventType_Button:
         action = (LightMgr().IsLightOn()) ? LightingManager::OFF_ACTION : LightingManager::ON_ACTION;
         actor  = AppEvent::kEventType_Button;
-    }
-    else
-    {
+        break;
+      case AppEvent::kEventType_Coap:
+        action = (LightMgr().IsLightOn()) ? LightingManager::OFF_ACTION : LightingManager::ON_ACTION;
+        actor  = AppEvent::kEventType_Coap;
+        break;
+      default:
         err = APP_ERROR_UNHANDLED_EVENT;
+        break;
+
     }
 
     if (err == CHIP_NO_ERROR)
@@ -216,14 +221,30 @@ void AppTask::ActionInitiated(LightingManager::Action_t aAction, int32_t aActor)
     sAppTask.GetLCD().WriteDemoUI(lightOn);
 #endif
 
-    if (aActor == AppEvent::kEventType_Button)
+    switch (aActor)
     {
+      case AppEvent::kEventType_Button:
         sAppTask.mSyncClusterToButtonAction = true;
+        sAppTask.mSendCoapMessage = true;
+        break;
+      case AppEvent::kEventType_Coap:
+        sAppTask.mSyncClusterToButtonAction = true;
+        sAppTask.mSendCoapMessage = false;
+        break;
+      default:
+        sAppTask.mSyncClusterToButtonAction = false;
+        sAppTask.mSendCoapMessage = true;
+        break;
     }
+
+    SILABS_LOG("Action initiated: %d, %d", sAppTask.mSyncClusterToButtonAction,  sAppTask.mSendCoapMessage);
 }
+
+extern void send_coap_command(void);
 
 void AppTask::ActionCompleted(LightingManager::Action_t aAction)
 {
+    SILABS_LOG("Action completed: %d, %d", sAppTask.mSyncClusterToButtonAction,  sAppTask.mSendCoapMessage);
     // action has been completed bon the light
     if (aAction == LightingManager::ON_ACTION)
     {
@@ -232,6 +253,13 @@ void AppTask::ActionCompleted(LightingManager::Action_t aAction)
     else if (aAction == LightingManager::OFF_ACTION)
     {
         SILABS_LOG("Light OFF")
+    }
+
+    if (sAppTask.mSendCoapMessage)
+    {
+      //Send a Coap command
+      send_coap_command();
+      sAppTask.mSendCoapMessage = false;
     }
 
     if (sAppTask.mSyncClusterToButtonAction)

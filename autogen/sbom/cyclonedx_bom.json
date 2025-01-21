@@ -3,7 +3,7 @@
   "specVersion" : "1.6",
   "version" : 1,
   "metadata" : {
-    "timestamp" : "2025-01-07T16:19:27.492781500Z",
+    "timestamp" : "2025-01-10T13:59:18.273920700Z",
     "authors" : [ {
       "name" : "Silicon Laboratories, Inc."
     } ],
@@ -300,8 +300,8 @@
     }, {
       "scope" : "required",
       "type" : "library",
-      "bom-ref" : "matter:2.5.0:matter_log_uart",
-      "name" : "Logging to UART",
+      "bom-ref" : "matter:2.5.0:matter_log_rtt",
+      "name" : "Logging to RTT",
       "version" : "2.5.0",
       "supplier" : {
         "name" : "Silicon Laboratories Inc."
@@ -1176,6 +1176,18 @@
       "type" : "library",
       "bom-ref" : "simplicity_sdk:2024.12.0:ot_stack_ftd",
       "name" : "Stack (FTD)",
+      "version" : "2024.12.0",
+      "supplier" : {
+        "name" : "Silicon Laboratories, Inc."
+      },
+      "licenses" : [ {
+        "expression" : "Zlib"
+      } ]
+    }, {
+      "scope" : "required",
+      "type" : "library",
+      "bom-ref" : "simplicity_sdk:2024.12.0:rail_util_dma",
+      "name" : "RAIL Utility, DMA",
       "version" : "2024.12.0",
       "supplier" : {
         "name" : "Silicon Laboratories, Inc."

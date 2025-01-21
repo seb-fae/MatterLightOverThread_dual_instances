@@ -10,7 +10,7 @@ referenced in this SBOM.)
 -->
 <bom xmlns="http://cyclonedx.org/schema/bom/1.6" version="1">
   <metadata>
-    <timestamp>2025-01-07T16:19:27.492781500Z</timestamp>
+    <timestamp>2025-01-10T13:59:18.273920700Z</timestamp>
     <authors>
       <author>
         <name>Silicon Laboratories, Inc.</name>
@@ -255,8 +255,8 @@ referenced in this SBOM.)
             <expression>Apache 2.0</expression>
           </licenses>
         </component>
-        <component bom-ref="matter:2.5.0:matter_log_uart" type="library">
-          <name>Logging to UART</name>
+        <component bom-ref="matter:2.5.0:matter_log_rtt" type="library">
+          <name>Logging to RTT</name>
           <version>2.5.0</version>
 	      <supplier>
 	        <name>Silicon Laboratories Inc.</name>
@@ -986,6 +986,16 @@ referenced in this SBOM.)
         </component>
         <component bom-ref="simplicity_sdk:2024.12.0:ot_stack_ftd" type="library">
           <name>Stack (FTD)</name>
+          <version>2024.12.0</version>
+	      <supplier>
+	        <name>Silicon Laboratories, Inc.</name>
+	      </supplier>
+          <licenses>
+            <expression>Zlib</expression>
+          </licenses>
+        </component>
+        <component bom-ref="simplicity_sdk:2024.12.0:rail_util_dma" type="library">
+          <name>RAIL Utility, DMA</name>
           <version>2024.12.0</version>
 	      <supplier>
 	        <name>Silicon Laboratories, Inc.</name>

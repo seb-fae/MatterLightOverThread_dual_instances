@@ -26,7 +26,7 @@
 #include <platform/OpenThread/OpenThreadUtils.h>
 #include <platform/silabs/platformAbstraction/SilabsPlatform.h>
 
-#include <assert.h>
+
 #include <silabs_utils.h>
 #include "CodeUtils.h"
 #include <task.h>
@@ -56,7 +56,56 @@ uint8_t gpioState[15] = "NONE";
 char UriPath[]=URI;
 
 void CoapTaskMain(void * pvParameter);
-otMessage *responseMessage;
+otMessage *rspMessage;
+otMessage *cmdMessage;
+otMessageInfo messageInfo;
+
+// Define the multicast address (example: all nodes in the network)
+const char *multicastAddress = "ff03::1";
+
+void send_coap_command(void)
+{
+  if (coapInstance == NULL)
+    return;
+
+  cmdMessage = otCoapNewMessage(coapInstance, NULL);
+  OT_ASSERT(cmdMessage != NULL);
+
+  // Prepare the CoAP message
+  otCoapMessageInit(cmdMessage, OT_COAP_TYPE_NON_CONFIRMABLE, OT_COAP_CODE_PUT);
+  otCoapMessageGenerateToken(cmdMessage, OT_COAP_DEFAULT_TOKEN_LENGTH);
+  otCoapMessageAppendUriPathOptions(cmdMessage, UriPath);
+  otCoapMessageSetPayloadMarker(cmdMessage);
+
+   // Add payload to the message
+   const char *payload = "TOGGLE";
+   otMessageAppend(cmdMessage, payload, strlen(payload));
+
+   // Send the CoAP message
+   otError error = otCoapSendRequest(coapInstance, cmdMessage, &messageInfo, NULL, NULL);
+
+   /* After calling otCoapSendRequest, you should not free the message yourself.
+    * However, if otCoapSendRequest returns an error, indicating that the
+    * message was not successfully sent, you remain responsible for freeing the
+    *  message to prevent memory leaks */
+
+   if (error != OT_ERROR_NONE) {
+      otMessageFree(cmdMessage);
+      otLogWarnPlat("\nmessage send error %d\r", error);
+      }
+    else
+      otLogWarnPlat("\nmessage sent\r");
+
+}
+
+extern "C"  void memMonitoringTrackFree(void * ptr, size_t size)
+{
+  //otLogWarnPlat( "Free 0x%x\n", (uint32_t)ptr);
+}
+extern "C"  void memMonitoringTrackAlloc(void * ptr, size_t size)
+{
+  //otLogWarnPlat( "Alloc 0x%x %d\n", (uint32_t)ptr, size);
+}
 
 // Function to handle CoAP requests
 void coap_request_handler(void *aContext, otMessage *aMessage, const otMessageInfo *aMessageInfo)
@@ -67,10 +116,16 @@ void coap_request_handler(void *aContext, otMessage *aMessage, const otMessageIn
   otCoapCode messageCode = otCoapMessageGetCode(aMessage);
   otCoapType messageType = otCoapMessageGetType(aMessage);
 
-  otCoapMessageInitResponse(responseMessage, aMessage, OT_COAP_TYPE_ACKNOWLEDGMENT, responseCode);
-  otCoapMessageSetToken(responseMessage, otCoapMessageGetToken(aMessage),
+  if (messageCode == OT_COAP_CODE_GET || OT_COAP_TYPE_CONFIRMABLE == messageType)
+  {
+    rspMessage = otCoapNewMessage(coapInstance, NULL);
+    OT_ASSERT(rspMessage != NULL);
+
+    otCoapMessageInitResponse(rspMessage, aMessage, OT_COAP_TYPE_ACKNOWLEDGMENT, responseCode);
+    otCoapMessageSetToken(rspMessage, otCoapMessageGetToken(aMessage),
                        otCoapMessageGetTokenLength(aMessage));
-  otCoapMessageSetPayloadMarker(responseMessage);
+    otCoapMessageSetPayloadMarker(rspMessage);
+  }
 
   strcpy((char*)gpioState, LightMgr().IsLightOn() ? "ON": "OFF");
 
@@ -78,11 +133,11 @@ void coap_request_handler(void *aContext, otMessage *aMessage, const otMessageIn
   {
     case OT_COAP_CODE_GET:
 
-      error = otMessageAppend(responseMessage, gpioState,
+      error = otMessageAppend(rspMessage, gpioState,
                               strlen((const char*)gpioState));
       otEXPECT(OT_ERROR_NONE == error);
 
-      error = otCoapSendResponse((otInstance*)aContext, responseMessage,
+      error = otCoapSendResponse((otInstance*)aContext, rspMessage,
                                  aMessageInfo);
       otEXPECT(OT_ERROR_NONE == error);
       break;
@@ -103,18 +158,18 @@ void coap_request_handler(void *aContext, otMessage *aMessage, const otMessageIn
       if(strcmp("ON", data) == 0)
       {
         action = LightingManager::ON_ACTION;
-        otLogCritPlat("GPIO ON\n");
+        otLogWarnPlat("GPIO ON\n");
       }
       else if(strcmp("OFF", data) == 0)
       {
         action = LightingManager::OFF_ACTION;
-        otLogCritPlat("GPIO OFF\n");
+        otLogWarnPlat("GPIO OFF\n");
       }
       else if (strcmp("TOGGLE", data) == 0)
       {
         strcpy((char*)data, LightMgr().IsLightOn() ? "OFF": "ON");
         action = LightMgr().IsLightOn() ? LightingManager::OFF_ACTION : LightingManager::ON_ACTION;
-        otLogCritPlat("GPIO TOGGLE\n");
+        otLogWarnPlat("GPIO TOGGLE\n");
       }
       else
       {
@@ -122,21 +177,21 @@ void coap_request_handler(void *aContext, otMessage *aMessage, const otMessageIn
         otEXPECT_ACTION(false, error = OT_ERROR_NO_BUFS);
       }
       /* We use kEventType_Button to update cluster after action */
-      ret = LightMgr().InitiateAction(AppEvent::kEventType_Button, action);
+      ret = LightMgr().InitiateAction(AppEvent::kEventType_Coap, action);
 
       if (OT_COAP_TYPE_CONFIRMABLE == messageType)
       {
         if (ret)
         /* Action has been initiated, we return expected new value */
-          error = otMessageAppend(responseMessage, data, strlen((const char*)data));
+          error = otMessageAppend(rspMessage, data, strlen((const char*)data));
         else
           /* Action has not been initiated, we return pin state */
-          error = otMessageAppend(responseMessage, gpioState, strlen((const char*)gpioState));
+          error = otMessageAppend(rspMessage, gpioState, strlen((const char*)gpioState));
 
         otEXPECT(OT_ERROR_NONE == error);
 
         error = otCoapSendResponse((otInstance*)aContext,
-                                   responseMessage, aMessageInfo);
+                                   rspMessage, aMessageInfo);
         otEXPECT(OT_ERROR_NONE == error);
       }
     }
@@ -146,20 +201,25 @@ void coap_request_handler(void *aContext, otMessage *aMessage, const otMessageIn
   }
 
   exit:
+  if (error != OT_ERROR_NONE && rspMessage != NULL)
+     {
+       otMessageFree(rspMessage);
+     }
+
   return;
 }
 
 otCoapResource coapResourcegpio;
 
 // Function to initialize CoAP server
-otError coap_server_init(otInstance *aInstance)
+otError coap_server_init(otInstance *coapInstance)
 {
-    otError err = otCoapStart(aInstance, OT_DEFAULT_COAP_PORT);
+    otError err = otCoapStart(coapInstance, OT_DEFAULT_COAP_PORT);
 
     if (err != OT_ERROR_NONE)
       return err;
 
-    coapResourcegpio.mContext=aInstance;
+    coapResourcegpio.mContext=coapInstance;
     coapResourcegpio.mUriPath=UriPath;
     coapResourcegpio.mHandler=coap_request_handler;
     coapResourcegpio.mNext=NULL;
@@ -167,13 +227,15 @@ otError coap_server_init(otInstance *aInstance)
     strncpy(UriPath, URI, sizeof(URI));
 
     // Register the CoAP resource
-    otCoapAddResource(aInstance, &coapResourcegpio);
+    otCoapAddResource(coapInstance, &coapResourcegpio);
 
-    responseMessage = otCoapNewMessage(aInstance, NULL);
-    if (responseMessage == NULL)
-         return OT_ERROR_NO_BUFS;
+     // Prepare message info
+     memset(&messageInfo, 0, sizeof(messageInfo));
+     otIp6AddressFromString(multicastAddress, &messageInfo.mPeerAddr);
 
-    otLogCritPlat("CoAP server initialized\n");
+     messageInfo.mPeerPort = OT_DEFAULT_COAP_PORT;
+
+    otLogWarnPlat("CoAP server initialized\n");
 
     return OT_ERROR_NONE;
 }
@@ -217,7 +279,7 @@ void CoapTaskMain(void * pvParameter)
   coapInstance = otGetMyInstance();
   const TickType_t xDelay = 50;
 
-  otLogCritPlat("Coap Task started");
+  otLogWarnPlat("Coap Task started");
 
   while (!otSysPseudoResetWasRequested())
   {
@@ -228,11 +290,14 @@ void CoapTaskMain(void * pvParameter)
           {
              /* Create Dataset */
              OT_ASSERT(otDatasetCreateNewNetwork(coapInstance, &dataset) == OT_ERROR_NONE);
+             dataset.mChannel = 16;
+             strcpy(dataset.mNetworkName.m8, "BYTEL");
              otDatasetConvertToTlvs(&dataset, &sDatasetTlvs);
              /* Commit it */
              OT_ASSERT(otDatasetSetActiveTlvs(coapInstance, &sDatasetTlvs) == OT_ERROR_NONE);
-             otLogCritPlat("OT proprietary: Dataset created and committed");
+             otLogWarnPlat("OT proprietary: Dataset created and committed");
            }
+          else
            state = ATTACHING;
           break;
         case ATTACHING:
@@ -241,16 +306,16 @@ void CoapTaskMain(void * pvParameter)
              // Enable the Thread IPv6 interface.
              OT_ASSERT(otIp6SetEnabled(coapInstance, true) == OT_ERROR_NONE);
              OT_ASSERT(otThreadSetEnabled(coapInstance, true) == OT_ERROR_NONE);
-             otLogCritPlat("OT proprietary: ifconfig up and thread start");
+             otLogWarnPlat("OT proprietary: ifconfig up and thread start");
              state = STARTING_COAP;
           }
-          else if (otThreadGetDeviceRole(sInstance) > OT_DEVICE_ROLE_DETACHED)
+          else if (otThreadGetDeviceRole(coapInstance) > OT_DEVICE_ROLE_DETACHED)
           {
             state = STARTING_COAP;
           }
           break;
         case STARTING_COAP:
-         if (otThreadGetDeviceRole(sInstance) > OT_DEVICE_ROLE_DETACHED)
+         if (otThreadGetDeviceRole(coapInstance) > OT_DEVICE_ROLE_DETACHED)
          {
              // Thread network is active
              OT_ASSERT(coap_server_init(coapInstance) == OT_ERROR_NONE);
@@ -264,7 +329,7 @@ void CoapTaskMain(void * pvParameter)
 
   }
   /* We should never get there */
-  otInstanceFinalize(sInstance);
+  otInstanceFinalize(coapInstance);
 }
 
 

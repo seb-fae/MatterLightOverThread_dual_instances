@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="uc.module.setup.componentSetup.com.silabs.ss.framework.project.toolchain.core.default#com.silabs.ss.tool.ide.arm.toolchain.gnu.cdt:12.2.1.20221205.gcc" propertyScope="project">
   <folder name="src">
-    <file name="AppTask.cpp" linked="false" uri="studio:/sdk/extension/matter_extension/third_party/matter_sdk/examples/lighting-app/silabs/src/AppTask.cpp"/>
-    <file name="LightingManager.cpp" linked="false" uri="studio:/sdk/extension/matter_extension/third_party/matter_sdk/examples/lighting-app/silabs/src/LightingManager.cpp"/>
-    <file name="main.cpp" linked="false" uri="studio:/sdk/extension/matter_extension/third_party/matter_sdk/examples/platform/silabs/main.cpp"/>
-    <file name="ZclCallbacks.cpp" linked="false" uri="studio:/sdk/extension/matter_extension/third_party/matter_sdk/examples/lighting-app/silabs/src/ZclCallbacks.cpp"/>
+    <file name="AppTask.cpp" linked="false" uri="studio:/project/src/AppTask.cpp"/>
+    <file name="LightingManager.cpp" linked="false" uri="studio:/project/src/LightingManager.cpp"/>
+    <file name="main.cpp" linked="false" uri="studio:/project/src/main.cpp"/>
+    <file name="ZclCallbacks.cpp" linked="false" uri="studio:/project/src/ZclCallbacks.cpp"/>
   </folder>
   <folder name="include">
-    <file name="AppConfig.h" linked="false" uri="studio:/sdk/extension/matter_extension/third_party/matter_sdk/examples/lighting-app/silabs/include/AppConfig.h"/>
-    <file name="AppEvent.h" linked="false" uri="studio:/sdk/extension/matter_extension/third_party/matter_sdk/examples/lighting-app/silabs/include/AppEvent.h"/>
-    <file name="AppTask.h" linked="false" uri="studio:/sdk/extension/matter_extension/third_party/matter_sdk/examples/lighting-app/silabs/include/AppTask.h"/>
-    <file name="CHIPProjectConfig.h" linked="false" uri="studio:/sdk/extension/matter_extension/third_party/matter_sdk/examples/lighting-app/silabs/include/CHIPProjectConfig.h"/>
-    <file name="LightingManager.h" linked="false" uri="studio:/sdk/extension/matter_extension/third_party/matter_sdk/examples/lighting-app/silabs/include/LightingManager.h"/>
+    <file name="AppConfig.h" linked="false" uri="studio:/project/include/AppConfig.h"/>
+    <file name="AppEvent.h" linked="false" uri="studio:/project/include/AppEvent.h"/>
+    <file name="AppTask.h" linked="false" uri="studio:/project/include/AppTask.h"/>
+    <file name="CHIPProjectConfig.h" linked="false" uri="studio:/project/include/CHIPProjectConfig.h"/>
+    <file name="LightingManager.h" linked="false" uri="studio:/project/include/LightingManager.h"/>
   </folder>
   <folder name="matter_2.5.0">
     <folder name="third_party">
@@ -2091,6 +2091,10 @@
               </folder>
               <file name="sl_rail_phy_overrides.c" linked="false" uri="studio:/sdk/platform/radio/rail_lib/plugin/rail_util_built_in_phys/sl_rail_phy_overrides.c"/>
             </folder>
+            <folder name="rail_util_dma">
+              <file name="sl_rail_util_dma.c" linked="false" uri="studio:/sdk/platform/radio/rail_lib/plugin/rail_util_dma/sl_rail_util_dma.c"/>
+              <file name="sl_rail_util_dma.h" linked="false" uri="studio:/sdk/platform/radio/rail_lib/plugin/rail_util_dma/sl_rail_util_dma.h"/>
+            </folder>
             <folder name="pa-conversions">
               <folder name="efr32xg24">
                 <file name="sl_rail_util_pa_curves_10dbm.h" linked="false" uri="studio:/sdk/platform/radio/rail_lib/plugin/pa-conversions/efr32xg24/sl_rail_util_pa_curves_10dbm.h"/>
@@ -3461,8 +3465,8 @@
   <folder name="linker_options">
     <file name="ot-rtos-wrapper-options" generated="true" linked="false"/>
   </folder>
-  <file name="qr_code_img.png" linked="false" uri="studio:/sdk/extension/matter_extension/slc/image/qr_code_img.png"/>
-  <file name="README.md" linked="false" uri="studio:/sdk/extension/matter_extension/slc/sample-app/lighting-app/efr32/README.md"/>
+  <file name="qr_code_img.png" linked="false" uri="studio:/project/qr_code_img.png"/>
+  <file name="README.md" linked="false" uri="studio:/project/README.md"/>
   <excludedPath>qr_code_img.png</excludedPath>
   <excludedPath>simplicity_sdk_2024.12.0/protocol/bluetooth/api/sl_bt.xapi</excludedPath>
   <excludedPath>linker_options/ot-rtos-wrapper-options</excludedPath>
@@ -3626,6 +3630,7 @@
   <includePath uri="studio:/project/simplicity_sdk_2024.12.0/platform/radio/rail_lib/chip/efr32/efr32xg2x"/>
   <includePath uri="studio:/project/simplicity_sdk_2024.12.0/platform/radio/rail_lib/protocol/sidewalk"/>
   <includePath uri="studio:/project/simplicity_sdk_2024.12.0/platform/radio/rail_lib/plugin/rail_util_built_in_phys/efr32xg24"/>
+  <includePath uri="studio:/project/simplicity_sdk_2024.12.0/platform/radio/rail_lib/plugin/rail_util_dma"/>
   <includePath uri="studio:/project/simplicity_sdk_2024.12.0/platform/radio/rail_lib/plugin/pa-conversions"/>
   <includePath uri="studio:/project/simplicity_sdk_2024.12.0/platform/radio/rail_lib/plugin/pa-conversions/efr32xg24"/>
   <includePath uri="studio:/project/simplicity_sdk_2024.12.0/platform/radio/rail_lib/plugin/rail_util_power_manager_init"/>
@@ -3660,7 +3665,7 @@
   <macroDefinition name="OPENTHREAD_CONFIG_ENABLE_BUILTIN_MBEDTLS" value="0"/>
   <macroDefinition name="DISPLAY_ENABLED"/>
   <macroDefinition name="ENABLE_WSTK_LEDS" value="1"/>
-  <macroDefinition name="SILABS_LOG_OUT_UART" value="1"/>
+  <macroDefinition name="SILABS_LOG_OUT_UART" value="0"/>
   <macroDefinition name="NON_SPEC_COMPLIANT_OTA_ACTION_DELAY_FLOOR" value="-1"/>
   <macroDefinition name="SILABS_OTA_ENABLED"/>
   <macroDefinition name="QR_CODE_ENABLED"/>

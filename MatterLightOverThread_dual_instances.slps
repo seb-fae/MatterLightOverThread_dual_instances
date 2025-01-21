@@ -3,7 +3,7 @@
   <descriptors name="MatterLightOverThread_dual_instances">
     <properties key="projectCommon.sdkId" value="com.silabs.sdk.stack.sisdk:2024.12.0._295822459"/>
     <properties key="universalConfig.relativeWorkspacePath" value="..\MatterLightOverThreadSolution_2.slcw"/>
-    <properties key="universalConfig.generationDirectory" value="..\..\..\..\..\..\..\..\v5_workspace_12\MatterLightOverThread_dual_instances"/>
+    <properties key="universalConfig.generationDirectory" value=""/>
     <properties key="universalConfig.toolchainCompatibility" value="gcc"/>
     <properties key="projectCommon.overwriteCopiedSources" value="false"/>
     <properties key="projectCommon.boardIds" value="brd4186c:0.0.0.A01 brd4002a:0.0.0.A06"/>
