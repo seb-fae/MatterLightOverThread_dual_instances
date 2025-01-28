@@ -1627,7 +1627,12 @@ otError otPlatRadioSleep(otInstance *aInstance)
     OT_UNUSED_VARIABLE(aInstance);
     otError error = OT_ERROR_NONE;
 
+#if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE
+    if (getInternalFlag(FLAG_ONGOING_TX_DATA))
+      goto exit;
+#else
     otEXPECT_ACTION(!getInternalFlag(FLAG_ONGOING_TX_DATA), error = OT_ERROR_BUSY);
+#endif
 
     otLogInfoPlat("State=OT_RADIO_STATE_SLEEP");
     setInternalFlag(FLAG_SCHEDULED_RX_PENDING, false);
