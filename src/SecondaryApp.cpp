@@ -34,7 +34,6 @@
 #include "LightingManager.h"
 
 
-
 #ifndef APP_TASK_STACK_SIZE
 #define APP_TASK_STACK_SIZE (4096)
 #endif
@@ -42,9 +41,15 @@
 
 TaskHandle_t sCoapTaskHandle;
 
-StackType_t CoapStack[APP_TASK_STACK_SIZE / sizeof(StackType_t)];
+StackType_t CoapStack[APP_TASK_STACK_SIZE /2 / sizeof(StackType_t)];
 StaticTask_t CoapTaskStruct;
-osThreadId_t sMainThread;
+osThreadId_t sCoapThread;
+
+TaskHandle_t sThreadTaskHandle;
+
+StackType_t ThreadStack[APP_TASK_STACK_SIZE / sizeof(StackType_t)];
+StaticTask_t ThreadTaskStruct;
+osThreadId_t sThread;
 
 bool server_started = false;
 otInstance * coapInstance = NULL;
@@ -56,6 +61,8 @@ uint8_t gpioState[15] = "NONE";
 char UriPath[]=URI;
 
 void CoapTaskMain(void * pvParameter);
+void ProprietaryThreadTaskMain(void * pvParameter);
+
 otMessage *rspMessage;
 otMessage *cmdMessage;
 otMessageInfo messageInfo;
@@ -96,15 +103,6 @@ void send_coap_command(void)
     else
       otLogWarnPlat("\nmessage sent\r");
 
-}
-
-extern "C"  void memMonitoringTrackFree(void * ptr, size_t size)
-{
-  //otLogWarnPlat( "Free 0x%x\n", (uint32_t)ptr);
-}
-extern "C"  void memMonitoringTrackAlloc(void * ptr, size_t size)
-{
-  //otLogWarnPlat( "Alloc 0x%x %d\n", (uint32_t)ptr, size);
 }
 
 // Function to handle CoAP requests
@@ -240,21 +238,6 @@ otError coap_server_init(otInstance *coapInstance)
     return OT_ERROR_NONE;
 }
 
-CHIP_ERROR StartCoapTask()
-{
-  // Start App task.
-  sCoapTaskHandle = xTaskCreateStatic(CoapTaskMain, "Coap Task", ArraySize(CoapStack), NULL, APP_TASK_PRIORITY, CoapStack, &CoapTaskStruct);
-  sMainThread = (osThreadId_t)sCoapTaskHandle;
-
-  if (sCoapTaskHandle == nullptr)
-  {
-      SILABS_LOG("Failed to create app Coap task");
-      appError(APP_ERROR_CREATE_TASK_FAILED);
-  }
-  return CHIP_NO_ERROR;
-}
-
-
 #include <openthread/dataset.h>
 #include <openthread/dataset_ftd.h>
 #include <openthread/dataset_updater.h>
@@ -328,9 +311,103 @@ void CoapTaskMain(void * pvParameter)
      vTaskDelay( xDelay );
 
   }
-  /* We should never get there */
-  otInstanceFinalize(coapInstance);
 }
 
 
+CHIP_ERROR StartCoapTask()
+{
+  // Start Thread task.
+  sThreadTaskHandle = xTaskCreateStatic(ProprietaryThreadTaskMain, "Thread Task", ArraySize(ThreadStack), NULL, SL_OPENTHREAD_RTOS_STACK_TASK_PRIORITY, ThreadStack, &ThreadTaskStruct);
+  sThread = (osThreadId_t)sThreadTaskHandle;
+
+  if (sThreadTaskHandle == nullptr)
+  {
+      SILABS_LOG("Failed to create app Thread task");
+      appError(APP_ERROR_CREATE_TASK_FAILED);
+  }
+
+  // Start App task.
+  sCoapTaskHandle = xTaskCreateStatic(CoapTaskMain, "Coap Task", ArraySize(CoapStack), NULL, APP_TASK_PRIORITY, CoapStack, &CoapTaskStruct);
+  sCoapThread = (osThreadId_t)sCoapTaskHandle;
+
+  if (sCoapTaskHandle == nullptr)
+  {
+      SILABS_LOG("Failed to create app Coap task");
+      appError(APP_ERROR_CREATE_TASK_FAILED);
+  }
+
+  return CHIP_NO_ERROR;
+}
+
+
+/* ---------------------------------------------------------------------------*/
+
+otInstance * myOtInstance = NULL;
+
+extern "C" void otAppCliInit(otInstance *aInstance);
+extern "C" otInstance * otGetInstance(void);
+extern "C" otInstance * otGetMyInstance(void)
+{
+  return myOtInstance;
+}
+
+#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
+
+#define MATTER_INST_ID 0
+#define PROPRIETARY_INST_ID 1
+
+otInstance *sInstances[OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_NUM];
+
+extern "C" otInstance *otPlatMultipanIidToInstance(uint8_t aIid)
+{
+   return ((aIid - 1) == MATTER_INST_ID ? otGetInstance() : myOtInstance);
+}
+
+extern "C" uint8_t otPlatMultipanInstanceToIid(otInstance *aInstance)
+{
+  uint8_t idx = otInstanceGetIdx(aInstance);
+  return idx + 1;
+}
+
+#endif
+
+
+void ProprietaryThreadTaskMain(void * pvParameter)
+{
+    OT_UNUSED_VARIABLE(pvParameter);
+
+    const TickType_t xDelay = 50;
+
+#if defined(SL_CATALOG_OT_CRASH_HANDLER_PRESENT)
+    efr32PrintResetInfo();
+#endif
+
+    myOtInstance = otInstanceInitMultiple(1);
+    otInstance * matterOtInstance = otGetInstance();
+
+    OT_ASSERT(matterOtInstance != NULL);
+    OT_ASSERT(myOtInstance!= NULL);
+
+
+    sInstances[MATTER_INST_ID] = otGetInstance();
+    sInstances[PROPRIETARY_INST_ID] = myOtInstance;
+
+    /* Move CLI to Proprietary Thread instance */
+    otAppCliInit(myOtInstance);
+
+    while (!otSysPseudoResetWasRequested())
+    {
+        // Acquire mutex for stack access
+        sl_ot_rtos_acquire_stack_mutex();
+
+        // Process callbacks and tasklets
+        otSysProcessDrivers(myOtInstance);
+        otTaskletsProcess(myOtInstance);
+
+        // Release the stack mutex
+        sl_ot_rtos_release_stack_mutex();
+
+        vTaskDelay( xDelay );
+    }
+}
 

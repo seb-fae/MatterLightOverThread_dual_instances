@@ -38,15 +38,10 @@
 
 #include <lib/support/CodeUtils.h>
 #include <mbedtls/platform.h>
-#include <openthread-core-config.h>
-#include <openthread/instance.h>
-#include "instance/instance.hpp"
-
 
 extern "C" {
 #include "platform-efr32.h"
 otInstance * otGetInstance(void);
-otInstance * otGetMyInstance(void);
 #if CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI
 void otAppCliInit(otInstance * aInstance);
 #endif // CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI
@@ -56,7 +51,6 @@ namespace chip {
 namespace DeviceLayer {
 namespace {
 otInstance * sOTInstance = NULL;
-otInstance * myOTInstance = NULL;
 
 // Network commissioning
 #ifndef _NO_GENERIC_THREAD_NETWORK_COMMISSIONING_DRIVER_
@@ -193,52 +187,23 @@ extern "C" otError otPlatUartEnable(void)
 #endif
 }
 
-extern "C" otInstance * otGetMyInstance(void)
-{
-    return myOTInstance;
-}
-
 extern "C" otInstance * otGetInstance(void)
 {
     return sOTInstance;
 }
 
-#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
-
-#define MATTER_INST_ID 0
-#define PROPRIETARY_INST_ID 1
-
-otInstance *sInstances[OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_NUM];
-
-extern "C" otInstance *otPlatMultipanIidToInstance(uint8_t aIid)
-{
-   return ((aIid - 1) == MATTER_INST_ID ? sOTInstance : myOTInstance);
-}
-
-extern "C" uint8_t otPlatMultipanInstanceToIid(otInstance *aInstance)
-{
-  uint8_t idx = otInstanceGetIdx(aInstance);
-  return idx + 1;
-}
-
-#endif
-
 extern "C" void sl_ot_create_instance(void)
 {
     VerifyOrDie(chip::Platform::MemoryInit() == CHIP_NO_ERROR);
     mbedtls_platform_set_calloc_free(CHIPPlatformMemoryCalloc, CHIPPlatformMemoryFree);
-    sOTInstance = otInstanceInitMultiple(0);
-    myOTInstance = otInstanceInitMultiple(1);
-
-    sInstances[MATTER_INST_ID] = sOTInstance;
-    sInstances[PROPRIETARY_INST_ID] = myOTInstance;
+    sOTInstance = otInstanceInitSingle();
 }
 
 extern "C" void sl_ot_cli_init(void)
 {
 #if !defined(PW_RPC_ENABLED) && CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI
-    VerifyOrDie(myOTInstance != NULL);
-    otAppCliInit(myOTInstance);
+    VerifyOrDie(sOTInstance != NULL);
+    otAppCliInit(sOTInstance);
 #endif
 }
 

@@ -60,7 +60,7 @@ using namespace ot;
 
 uint8_t otInstanceGetIdx(otInstance *aInstance)
 {
-    return Instance::GetIdx(reinterpret_cast<Instance *>(aInstance));
+    return Instance::GetIdx(AsCoreTypePtr(aInstance));
 }
 
 otInstance *otInstanceInitMultiple(uint8_t aIdx)

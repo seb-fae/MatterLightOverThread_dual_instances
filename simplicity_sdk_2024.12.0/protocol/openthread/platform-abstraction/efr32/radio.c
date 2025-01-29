@@ -31,7 +31,7 @@
  *   This file implements the OpenThread platform abstraction for radio communication.
  *
  */
-//#define DEBUG_RADIO
+
 #include <assert.h>
 #include <openthread-core-config.h>
 #include <openthread-system.h>
@@ -45,7 +45,6 @@
 #include <openthread/platform/multipan.h>
 #endif
 
-//#define DEBUG_RADIO
 #include "common/code_utils.hpp"
 #include "common/debug.hpp"
 #include "common/logging.hpp"
@@ -109,6 +108,8 @@
 #ifdef SL_CATALOG_RAIL_UTIL_IEEE802154_FAST_CHANNEL_SWITCHING_PRESENT
 #include "sl_rail_util_ieee802154_fast_channel_switching_config.h"
 #endif // SL_CATALOG_RAIL_UTIL_IEEE802154_FAST_CHANNEL_SWITCHING_PRESENT
+
+//#define DEBUG_RADIO
 
 //------------------------------------------------------------------------------
 // Enums, macros and static variables
@@ -315,9 +316,10 @@ static otRadioIeInfo sTransmitIeInfo[RADIO_REQUEST_BUFFER_COUNT];
 #define CCA_THRESHOLD_UNINIT 127
 #define CCA_THRESHOLD_DEFAULT -75 // dBm  - default for 2.4GHz 802.15.4
 
-
+#if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE
 volatile bool tx_aborted[RADIO_REQUEST_BUFFER_COUNT] = { false, false};
 volatile bool tx_busy = false;
+#endif
 
 #define UNINITIALIZED_CHANNEL 0xFF
 
@@ -1495,7 +1497,7 @@ void otPlatRadioSetPanId(otInstance *aInstance, uint16_t aPanId)
 
     otEXPECT(sl_ot_rtos_task_can_access_pal());
     OT_ASSERT(panIndex != INVALID_INTERFACE_INDEX);
-    otLogWarnPlat("PANID=%X index=%u IID=%d", aPanId, panIndex, iid);
+    otLogInfoPlat("PANID=%X index=%u IID=%d", aPanId, panIndex, iid);
     utilsSoftSrcMatchSetPanId(iid, aPanId);
 
     status = RAIL_IEEE802154_SetPanId(gRailHandle, aPanId, panIndex);
@@ -1627,7 +1629,12 @@ otError otPlatRadioSleep(otInstance *aInstance)
     OT_UNUSED_VARIABLE(aInstance);
     otError error = OT_ERROR_NONE;
 
+#if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE
+    if (getInternalFlag(FLAG_ONGOING_TX_DATA))
+      goto exit;
+#else
     otEXPECT_ACTION(!getInternalFlag(FLAG_ONGOING_TX_DATA), error = OT_ERROR_BUSY);
+#endif
 
     otLogInfoPlat("State=OT_RADIO_STATE_SLEEP");
     setInternalFlag(FLAG_SCHEDULED_RX_PENDING, false);
@@ -1670,7 +1677,6 @@ otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
     otEXPECT_ACTION(sl_ot_rtos_task_can_access_pal(), error = OT_ERROR_REJECTED);
     otEXPECT_ACTION(!getInternalFlag(FLAG_ONGOING_TX_DATA) && sEnergyScanStatus != ENERGY_SCAN_STATUS_IN_PROGRESS,
                     error = OT_ERROR_INVALID_STATE);
-    OT_ASSERT(!getInternalFlag(FLAG_ONGOING_TX_DATA) && sEnergyScanStatus != ENERGY_SCAN_STATUS_IN_PROGRESS);
     OT_UNUSED_VARIABLE(iid);
 #if FAST_CHANNEL_SWITCHING_SUPPORT && OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
     uint8_t index = efr32GetPanIndexFromIid(iid);
@@ -1756,6 +1762,8 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
     int8_t  txPower = sl_get_tx_power_for_current_channel(aInstance);
     uint8_t iid     = efr32GetIidFromInstance(aInstance);
 
+#if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE
+
     CORE_DECLARE_IRQ_STATE;
     CORE_ENTER_ATOMIC();
 
@@ -1778,6 +1786,9 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
 #ifdef DEBUG_RADIO
     otLogWarnPlat("RADIOTX %d", iid);
 #endif
+
+#endif
+
     // sTransmitBuffer's index 0 corresponds to host 1 i.e. iid 1 and reason is,
     // iid zero is reserved for broadcast frames in multipan case.
     uint8_t txBufIndex = iid ? (iid - 1) : 0;
@@ -2091,7 +2102,9 @@ otRadioFrame *otPlatRadioGetTransmitBuffer(otInstance *aInstance)
     otEXPECT(sl_ot_rtos_task_can_access_pal());
 
 #if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
+#if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE
     index = otPlatMultipanInstanceToIid(aInstance) - 1;
+#endif
     /*
     for (index = 0; index < OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_NUM; index++)
     {
@@ -3470,6 +3483,7 @@ static void processTxComplete(otInstance *aInstance)
     otError       txStatus;
     otRadioFrame *ackFrame = NULL;
 
+#if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE
   uint8_t iid = otPlatMultipanInstanceToIid(aInstance) - 1;
 
   CORE_DECLARE_IRQ_STATE;
@@ -3489,7 +3503,7 @@ static void processTxComplete(otInstance *aInstance)
   }
 
   CORE_EXIT_ATOMIC();
-
+#endif
 
     if (getInternalFlag(RADIO_TX_EVENTS))
     {
@@ -3543,6 +3557,7 @@ static void processTxComplete(otInstance *aInstance)
             sCurrentTxPacket->frame.mInfo.mTxInfo.mTxDelayBaseTime = 0;
             sCurrentTxPacket->frame.mInfo.mTxInfo.mTxDelay         = 0;
 #if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
+#if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE
 #ifdef DEBUG_RADIO
             otLogWarnPlat("RADIOTX DONE %d %d", sCurrentTxPacket->iid, txStatus);
 #endif
@@ -3553,6 +3568,7 @@ static void processTxComplete(otInstance *aInstance)
             tx_busy = false;
 
             CORE_EXIT_ATOMIC();
+#endif
             otPlatRadioTxDone(otPlatMultipanIidToInstance(sCurrentTxPacket->iid),
                               &sCurrentTxPacket->frame,
                               ackFrame,
