@@ -274,7 +274,7 @@ void CoapTaskMain(void * pvParameter)
              /* Create Dataset */
              OT_ASSERT(otDatasetCreateNewNetwork(coapInstance, &dataset) == OT_ERROR_NONE);
              dataset.mChannel = 16;
-             strcpy(dataset.mNetworkName.m8, "BYTEL");
+             strcpy(dataset.mNetworkName.m8, "OTNAME");
              otDatasetConvertToTlvs(&dataset, &sDatasetTlvs);
              /* Commit it */
              OT_ASSERT(otDatasetSetActiveTlvs(coapInstance, &sDatasetTlvs) == OT_ERROR_NONE);
