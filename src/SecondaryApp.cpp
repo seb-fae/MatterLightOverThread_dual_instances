@@ -345,6 +345,12 @@ CHIP_ERROR StartCoapTask()
 otInstance * myOtInstance = NULL;
 
 extern "C" void otAppCliInit(otInstance *aInstance);
+
+otInstance *otInstanceInitSingle(void)
+{
+   return otInstanceInitMultiple(0);
+}
+
 extern "C" otInstance * otGetInstance(void);
 extern "C" otInstance * otGetMyInstance(void)
 {
