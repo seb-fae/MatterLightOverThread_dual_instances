@@ -345,19 +345,12 @@ CHIP_ERROR StartCoapTask()
 otInstance * myOtInstance = NULL;
 
 extern "C" void otAppCliInit(otInstance *aInstance);
-
-otInstance *otInstanceInitSingle(void)
-{
-   return otInstanceInitMultiple(0);
-}
-
-extern "C" otInstance * otGetInstance(void);
 extern "C" otInstance * otGetMyInstance(void)
 {
   return myOtInstance;
 }
 
-#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
+extern "C" otInstance * otGetInstance(void);
 
 #define MATTER_INST_ID 0
 #define PROPRIETARY_INST_ID 1
@@ -375,8 +368,15 @@ extern "C" uint8_t otPlatMultipanInstanceToIid(otInstance *aInstance)
   return idx + 1;
 }
 
-#endif
-
+/* otInstanceInitSingle is used by the Matter framework to declare the first
+ * Thread instance. However when OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE is
+ * defined, this function is not defined anymore and we provide here an
+ * alternate definition.
+ */
+otInstance *otInstanceInitSingle(void)
+{
+   return otInstanceInitMultiple(0);
+}
 
 void ProprietaryThreadTaskMain(void * pvParameter)
 {
@@ -384,16 +384,11 @@ void ProprietaryThreadTaskMain(void * pvParameter)
 
     const TickType_t xDelay = 50;
 
-#if defined(SL_CATALOG_OT_CRASH_HANDLER_PRESENT)
-    efr32PrintResetInfo();
-#endif
-
     myOtInstance = otInstanceInitMultiple(1);
     otInstance * matterOtInstance = otGetInstance();
 
     OT_ASSERT(matterOtInstance != NULL);
     OT_ASSERT(myOtInstance!= NULL);
-
 
     sInstances[MATTER_INST_ID] = otGetInstance();
     sInstances[PROPRIETARY_INST_ID] = myOtInstance;

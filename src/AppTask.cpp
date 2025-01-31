@@ -244,7 +244,6 @@ extern void send_coap_command(void);
 
 void AppTask::ActionCompleted(LightingManager::Action_t aAction)
 {
-    SILABS_LOG("Action completed: %d, %d", sAppTask.mSyncClusterToButtonAction,  sAppTask.mSendCoapMessage);
     // action has been completed bon the light
     if (aAction == LightingManager::ON_ACTION)
     {

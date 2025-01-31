@@ -276,7 +276,6 @@ protected:
      * Protected Attributes declaration
      *********************************************************/
     bool mSyncClusterToButtonAction;
-    bool mSendCoapMessage;
 
 private:
     static void InitOTARequestorHandler(chip::System::Layer * systemLayer, void * appState);

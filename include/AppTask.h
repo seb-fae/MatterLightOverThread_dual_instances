@@ -78,6 +78,8 @@ public:
     static void ButtonEventHandler(uint8_t button, uint8_t btnAction);
     void PostLightActionRequest(int32_t aActor, LightingManager::Action_t aAction);
 
+    bool mSendCoapMessage;
+
 private:
     static AppTask sAppTask;
 

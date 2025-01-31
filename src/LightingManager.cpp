@@ -71,9 +71,6 @@ CHIP_ERROR LightingManager::Init()
     mAutoTurnOffDuration   = 0;
     mOffEffectArmed        = false;
 
-
-    SILABS_LOG("mLightTimer timer created");
-
     return CHIP_NO_ERROR;
 }
 
@@ -161,8 +158,6 @@ void LightingManager::StartTimer(uint32_t aTimeoutMs)
         SILABS_LOG("mLightTimer timer start() failed");
         appError(APP_ERROR_START_TIMER_FAILED);
     }
-    else
-      SILABS_LOG("Timer start");
 }
 
 void LightingManager::CancelTimer(void)
@@ -185,9 +180,6 @@ void LightingManager::TimerEventHandler(void * timerCbArg)
     AppEvent event;
     event.Type               = AppEvent::kEventType_Timer;
     event.TimerEvent.Context = light;
-
-    SILABS_LOG("Timer Event: %d", light->mAutoTurnOffTimerArmed);
-
 
     if (light->mAutoTurnOffTimerArmed)
     {
